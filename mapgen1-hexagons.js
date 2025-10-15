@@ -4,7 +4,8 @@
  * @license Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-import {Point, Hex, Layout} from "./hexlib.js";
+import { Point, Hex, Layout } from "./hexlib.js";
+import { createNoise2D } from "./third-party/_libs.js";
 
 function mod(a, b) { return (a % b + b) % b; }
 
@@ -96,9 +97,25 @@ class GameMap {
 
         /** @type{KeyMap<Hex, number>} */
         this.elevation = new KeyMap();
+        /** @type{KeyMap<Hex, number>} */
+        this.moisture = new KeyMap();
+        /** @type{KeyMap<Hex, string>} */
+        this.biome = new KeyMap();
         /** @type{KeyMap<Edge, boolean>} */
         this.coastline = new KeyMap();
     }
+
+    generateElevations() {
+        let elevationNoise = createNoise2D();
+        let moistureNoise = createNoise2D();
+        let layout = new Layout(Layout.pointy, new Point(1, 1), new Point(0, 0));
+        for (let hex of this.hexes) {
+            let position = layout.hexToPixel(hex);
+            this.elevation.set(hex, elevationNoise(p.x, p.y));
+            this.moisture.set(hex, moistureNoise(p.x, p.y));
+        }
+    }
+
 }
 
 
@@ -127,7 +144,7 @@ class Renderer {
         /** @type{HTMLCanvasElement} */
         this.canvas = document.getElementById(id);
         /** @type{Layout} */
-        this.layout = new Layout(Layout.pointy, new Point(20, 20), new Point(this.canvas.width/2, this.canvas.height/2));
+        this.layout = new Layout(Layout.pointy, new Point(24, 24), new Point(this.canvas.width/2, this.canvas.height/2));
         /** @type{GameMap} */
         this.gameMap = gameMap;
     }
@@ -140,6 +157,6 @@ class Renderer {
     }
 }
 
-let gameMap = new GameMap(createHexagonShapedMap(14));
+let gameMap = new GameMap(createHexagonShapedMap(11));
 let renderer = new Renderer('output', gameMap);
 renderer.render();
