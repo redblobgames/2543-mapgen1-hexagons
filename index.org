@@ -2,26 +2,7 @@
 #+date: <2025-10-15 Wed>
 #+draft: t
 
-I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before.
-
-Ingredients phase 1:
-
-1. hexlib.js from https://www.redblobgames.com/grids/hexagons/implementation.html#codegen
-1. hex grid from https://www.redblobgames.com/grids/hexagons/implementation.html#map-shapes
-1. some way to store attributes of each hex tile
-1. hex to x,y from hexToPixel() https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-1. x,y to e,m from https://www.redblobgames.com/maps/terrain-from-noise/#demo
-1. e,m to biome from https://www.redblobgames.com/maps/terrain-from-noise/#biomes
-1. biome to color from colormap.js
-1. drawing each hex
-1. clicking on hexes using pixelToHex() https://www.redblobgames.com/grids/hexagons/#pixel-to-hex → see the tags
-
-Phase 2:
-
-1. edge coordinates from https://www.redblobgames.com/grids/parts/#hexagon-coordinates
-1. coastline drawing + tag by marking edges that are coastlines
-1. river generation
-1. road click edge to toggle
+I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before. Reload to see a new map.
 
 #+begin_export html
 <figure>
@@ -30,6 +11,26 @@ Phase 2:
 #+end_export
 
 Source: [[file:mapgen1-hexagons.js]]
+
+Ingredients phase 1:
+
+1. hexlib.js from https://www.redblobgames.com/grids/hexagons/implementation.html#codegen
+1. hex grid from https://www.redblobgames.com/grids/hexagons/implementation.html#map-shapes
+1. store attributes at each hex - KeyMap class from https://www.redblobgames.com/x/2226-roguelike-dev/
+1. hex to x,y from hexToPixel() https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+1. x,y to e,m from https://www.redblobgames.com/maps/terrain-from-noise/#demo
+1. e,m to biome from https://www.redblobgames.com/maps/terrain-from-noise/#biomes
+1. biome to color from https://www.redblobgames.com/maps/mapgen2/colormap.js
+1. drawing each hex from https://www.redblobgames.com/maps/mapgen2/draw.js
+
+Phase 2:
+
+1. make the maps into islands using https://www.redblobgames.com/maps/terrain-from-noise/#islands
+1. click on hexes using pixelToHex() https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+1. edge coordinates from https://www.redblobgames.com/grids/parts/#hexagon-coordinates
+1. mark edges as coastlines, and draw them
+1. generate rivers, and draw them
+1. generate or paint roads, and draw them
 
 #+begin_export html
 <x:head>

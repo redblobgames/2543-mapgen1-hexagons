@@ -4,6 +4,8 @@
  * @license Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
+const MAP_RADIUS = 15;
+
 import { Point, Hex, Layout } from "./hexlib.js";
 import { createNoise2D } from "./third-party/_libs.js";
 
@@ -52,6 +54,34 @@ function createHexagonShapedMap(radius) {
 }
 
 
+// adapted from https://www.redblobgames.com/maps/mapgen2/
+function biomeFor(elevation, moisture) {
+    let ocean = elevation < 0.0;
+    let temperature = 1.0 - elevation;
+    if (ocean) {
+        return 'OCEAN';
+    } else if (temperature < 0.2) {
+        if (moisture > 0.50) return 'SNOW';
+        else if (moisture > 0.33) return 'TUNDRA';
+        else if (moisture > 0.16) return 'BARE';
+        else return 'SCORCHED';
+    } else if (temperature < 0.4) {
+        if (moisture > 0.66) return 'TAIGA';
+        else if (moisture > 0.33) return 'SHRUBLAND';
+        else return 'TEMPERATE_DESERT';
+    } else if (temperature < 0.7) {
+        if (moisture > 0.83) return 'TEMPERATE_RAIN_FOREST';
+        else if (moisture > 0.50) return 'TEMPERATE_DECIDUOUS_FOREST';
+        else if (moisture > 0.16) return 'GRASSLAND';
+        else return 'TEMPERATE_DESERT';
+    } else {
+        if (moisture > 0.66) return 'TROPICAL_RAIN_FOREST';
+        else if (moisture > 0.33) return 'TROPICAL_SEASONAL_FOREST';
+        else if (moisture > 0.16) return 'GRASSLAND';
+        else return 'SUBTROPICAL_DESERT';
+    }
+}
+
 // Adapted from https://www.redblobgames.com/x/2226-roguelike-dev/
 // JavaScript Map keys are compared by identity, but I want them
 // compared by toString() value, so I have this version of Map.
@@ -84,9 +114,11 @@ class GameMap {
     /**
      * @param {Set<Hex>} hexes - the set of hexes in this map
      */
-    constructor(hexes) {
+    constructor(radius) {
+        /** @type{number} */
+        this.radius = radius;
         /** @type{Set<Hex>} */
-        this.hexes = hexes;
+        this.hexes = createHexagonShapedMap(radius);
         /** @type{Set<Edge>} */
         this.edges = new Set();
         for (let hex of this.hexes) {
@@ -106,16 +138,24 @@ class GameMap {
     }
 
     generateElevations() {
+        const scale = 1 / this.radius;
         let elevationNoise = createNoise2D();
         let moistureNoise = createNoise2D();
         let layout = new Layout(Layout.pointy, new Point(1, 1), new Point(0, 0));
         for (let hex of this.hexes) {
-            let position = layout.hexToPixel(hex);
-            this.elevation.set(hex, elevationNoise(p.x, p.y));
-            this.moisture.set(hex, moistureNoise(p.x, p.y));
+            let p = layout.hexToPixel(hex);
+            let nx = p.x * scale,
+                ny = p.y * scale;
+            this.elevation.set(hex, elevationNoise(nx, ny));
+            this.moisture.set(hex, moistureNoise(nx, ny));
         }
     }
 
+    generateBiomes() {
+        for (let hex of this.hexes) {
+            this.biome.set(hex, biomeFor(this.elevation.get(hex), this.moisture.get(hex)));
+        }
+    }
 }
 
 
@@ -138,25 +178,57 @@ function drawHex(ctx, layout, hex, style={}) {
 function drawEdge(ctx, layout, edge, style) {
 }
 
+// Biome colors
+const discreteColors = {
+    OCEAN: "#44447a",
+    COAST: "#33335a",
+    LAKESHORE: "#225588",
+    LAKE: "#336699",
+    RIVER: "#225588",
+    MARSH: "#2f6666",
+    ICE: "#99ffff",
+    BEACH: "#a09077",
+    SNOW: "#ffffff",
+    TUNDRA: "#bbbbaa",
+    BARE: "#888888",
+    SCORCHED: "#555555",
+    TAIGA: "#99aa77",
+    SHRUBLAND: "#889977",
+    TEMPERATE_DESERT: "#c9d29b",
+    TEMPERATE_RAIN_FOREST: "#448855",
+    TEMPERATE_DECIDUOUS_FOREST: "#679459",
+    GRASSLAND: "#88aa55",
+    SUBTROPICAL_DESERT: "#d2b98b",
+    TROPICAL_RAIN_FOREST: "#337755",
+    TROPICAL_SEASONAL_FOREST: "#559944",
+};
+
 // NOTE: could be merged into GameMap; just depends on your coding style
 class Renderer {
     constructor(id, gameMap) {
         /** @type{HTMLCanvasElement} */
         this.canvas = document.getElementById(id);
-        /** @type{Layout} */
-        this.layout = new Layout(Layout.pointy, new Point(24, 24), new Point(this.canvas.width/2, this.canvas.height/2));
         /** @type{GameMap} */
         this.gameMap = gameMap;
+        /** @type{Layout} */
+        this.layout = new Layout(
+            Layout.pointy,
+            new Point(this.canvas.width/gameMap.radius/3.6, this.canvas.height/gameMap.radius/3.6),
+            new Point(this.canvas.width/2, this.canvas.height/2)
+        );
     }
 
     render() {
         let ctx = this.canvas.getContext('2d');
         for (let hex of this.gameMap.hexes) {
-            drawHex(ctx, this.layout, hex, {});
+            let color = discreteColors[this.gameMap.biome.get(hex)];
+            drawHex(ctx, this.layout, hex, {fillStyle: color});
         }
     }
 }
 
-let gameMap = new GameMap(createHexagonShapedMap(11));
+let gameMap = new GameMap(MAP_RADIUS);
+gameMap.generateElevations();
+gameMap.generateBiomes();
 let renderer = new Renderer('output', gameMap);
 renderer.render();
