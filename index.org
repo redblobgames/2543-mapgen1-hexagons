@@ -4,16 +4,11 @@
 
 I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before.
 
-#+begin_export html
-<figure>
-  <canvas id="output" width="1024" height="1024" />
-  <button id="regenerate">Regenerate</button>
-</figure>
-#+end_export
+#+include: "embed.html" export html
 
 Source: [[file:mapgen1-hexagons.js]]
 
-Ingredients phase 1:
+Ingredients used so far:
 
 1. hexlib.js from https://www.redblobgames.com/grids/hexagons/implementation.html#codegen
 1. hex grid from https://www.redblobgames.com/grids/hexagons/implementation.html#map-shapes
@@ -24,14 +19,17 @@ Ingredients phase 1:
 1. biome to color from https://www.redblobgames.com/maps/mapgen2/colormap.js
 1. drawing each hex from https://www.redblobgames.com/maps/mapgen2/draw.js
 1. make the maps into islands using https://www.redblobgames.com/maps/terrain-from-noise/#islands
+1. click/drag handler https://www.redblobgames.com/making-of/draggable/examples.html#svg-painting
+1. find hex to paint on https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
 
-Phase 2:
+Ingredients for later:
 
-1. click on hexes using pixelToHex() https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+1. add icons for biomes from https://www.redblobgames.com/maps/mapgen2/map-icons.html
 1. edge coordinates from https://www.redblobgames.com/grids/parts/#hexagon-coordinates
 1. mark edges as coastlines, and draw them
 1. generate rivers, and draw them
 1. generate or paint roads, and draw them
+1. have a separate notion of temperature and elevation, so that snow could be at low elevation in arctic regions
 
 #+begin_export html
 <x:head>
@@ -39,6 +37,6 @@ Phase 2:
 </x:head>
 <x:footer>
   Created 15 Oct 2025; &#160;
-  <!-- hhmts start -->Last modified: 15 Oct 2025<!-- hhmts end -->
+  <!-- hhmts start -->Last modified: 16 Oct 2025<!-- hhmts end -->
 </x:footer>
 #+end_export
