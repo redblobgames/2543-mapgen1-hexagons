@@ -2,11 +2,12 @@
 #+date: <2025-10-15 Wed>
 #+draft: t
 
-I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before. Reload to see a new map.
+I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before.
 
 #+begin_export html
 <figure>
   <canvas id="output" width="1024" height="1024" />
+  <button id="regenerate">Regenerate</button>
 </figure>
 #+end_export
 
@@ -22,10 +23,10 @@ Ingredients phase 1:
 1. e,m to biome from https://www.redblobgames.com/maps/terrain-from-noise/#biomes
 1. biome to color from https://www.redblobgames.com/maps/mapgen2/colormap.js
 1. drawing each hex from https://www.redblobgames.com/maps/mapgen2/draw.js
+1. make the maps into islands using https://www.redblobgames.com/maps/terrain-from-noise/#islands
 
 Phase 2:
 
-1. make the maps into islands using https://www.redblobgames.com/maps/terrain-from-noise/#islands
 1. click on hexes using pixelToHex() https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
 1. edge coordinates from https://www.redblobgames.com/grids/parts/#hexagon-coordinates
 1. mark edges as coastlines, and draw them

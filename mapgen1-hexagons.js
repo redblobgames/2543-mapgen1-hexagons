@@ -4,12 +4,14 @@
  * @license Apache-2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-const MAP_RADIUS = 15;
+const MAP_RADIUS = 17; // number of hexes in each direction from center
+const SHAPE_INTO_ISLAND = 0.4; // from 0.0 to 1.0
 
 import { Point, Hex, Layout } from "./hexlib.js";
 import { createNoise2D } from "./third-party/_libs.js";
 
 function mod(a, b) { return (a % b + b) % b; }
+function lerp(a, b, t) { return a * (1-t) + b * t; }
 
 
 /** Represents an edge between two adjacent hexes
@@ -53,6 +55,18 @@ function createHexagonShapedMap(radius) {
     return results;
 }
 
+function fbm(noise2D, x, y, octaves) {
+    let frequency = 1.0;
+    let amplitude = 1.0;
+    let sumOfAmplitudes = 0.0;
+    let sumOfNoise = 0.0;
+    for (let layer = 0; layer < octaves; layer++, frequency *= 2.0, amplitude *= 0.5) {
+        let v = noise2D(x * frequency + layer, y * frequency + layer);
+        sumOfNoise += amplitude * v;
+        sumOfAmplitudes += amplitude;
+    }
+    return sumOfNoise / sumOfAmplitudes;
+}
 
 // adapted from https://www.redblobgames.com/maps/mapgen2/
 function biomeFor(elevation, moisture) {
@@ -138,17 +152,27 @@ class GameMap {
     }
 
     generateElevations() {
-        const scale = 1 / this.radius;
+        const scale = 0.5 / this.radius;
         let elevationNoise = createNoise2D();
         let moistureNoise = createNoise2D();
         let layout = new Layout(Layout.pointy, new Point(1, 1), new Point(0, 0));
         for (let hex of this.hexes) {
             let p = layout.hexToPixel(hex);
-            let nx = p.x * scale,
-                ny = p.y * scale;
-            this.elevation.set(hex, elevationNoise(nx, ny));
-            this.moisture.set(hex, moistureNoise(nx, ny));
+            let scaledX = p.x * scale,
+                scaledY = p.y * scale;
+            let e = fbm(elevationNoise, scaledX, scaledY, 4);
+            let m = fbm(moistureNoise, scaledX, scaledY, 5);
+            e = this.adjustElevationForIsland(hex.len() / this.radius, e);
+            this.elevation.set(hex, e);
+            this.moisture.set(hex, Math.abs(m));
         }
+    }
+
+    // adjust elevation to make it more of an island, adapted from
+    // https://www.redblobgames.com/maps/terrain-from-noise/#islands
+    adjustElevationForIsland(d, e) {
+        e = lerp(e, 1 - 2 * d, SHAPE_INTO_ISLAND);
+        return e;
     }
 
     generateBiomes() {
@@ -165,7 +189,7 @@ function drawHex(ctx, layout, hex, style={}) {
     ctx.beginPath();
     ctx.strokeStyle = "black";
     ctx.fillStyle = "white";
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.5;
     Object.assign(ctx, style);
     ctx.moveTo(corners[5].x, corners[5].y);
     for (let direction = 0; direction < 6; direction++) {
@@ -227,8 +251,17 @@ class Renderer {
     }
 }
 
-let gameMap = new GameMap(MAP_RADIUS);
-gameMap.generateElevations();
-gameMap.generateBiomes();
-let renderer = new Renderer('output', gameMap);
-renderer.render();
+function main() {
+    let gameMap = new GameMap(MAP_RADIUS);
+    let renderer = new Renderer('output', gameMap);
+
+    function redraw() {
+        gameMap.generateElevations();
+        gameMap.generateBiomes();
+        renderer.render();
+    }
+    redraw();
+
+    document.getElementById('regenerate').addEventListener('click', redraw);
+}
+main();
