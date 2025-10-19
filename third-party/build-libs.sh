@@ -7,4 +7,4 @@
 pnpm install
 
 # NOTE: simplex-noise is from https://github.com/jwagner/simplex-noise.js , license: MIT
-echo 'export * from "simplex-noise";' | esbuild --bundle --format=esm --outfile=_libs.js
+echo 'export * from "simplex-noise";' | esbuild --bundle --format=esm --outfile=../build/_libs.js

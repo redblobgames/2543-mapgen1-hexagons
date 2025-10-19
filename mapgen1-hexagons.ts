@@ -8,11 +8,10 @@ const MAP_RADIUS = 17; // number of hexes in each direction from center
 const SHAPE_INTO_ISLAND = 0.4; // from 0.0 to 1.0
 
 import { Point, Hex, Layout } from "./hexlib.js";
-import { createNoise2D } from "./third-party/_libs.js";
+import { createNoise2D } from "./build/_libs.js";
 
-function mod(a, b) { return (a % b + b) % b; }
-function lerp(a, b, t) { return a * (1-t) + b * t; }
-
+function mod(a: number, b: number): number { return (a % b + b) % b; }
+function lerp(a: number, b: number, t: number): number { return a * (1-t) + b * t; }
 
 /** Represents an edge between two adjacent hexes
  */
@@ -21,7 +20,7 @@ class Edge {
      * @param {Hex} hex The starting hex tile.
      * @param {number} direction 0 to 5 representing which neighbor we're referring to.
      */
-    constructor(hex, direction) {
+    constructor(public hex: Hex, public direction: number) {
         // Edges are bidirectional so we canonicalize, from directions 3,4,5 to
         // directions 0,1,2 from the adjacent neighbor:
         // https://www.redblobgames.com/grids/parts/#hexagon-coordinates
@@ -30,9 +29,6 @@ class Edge {
             hex = hex.neighbor(direction);
             direction -= 3;
         }
-
-        this.hex = hex;
-        this.direction = direction;
     }
 
     /** key used when we want to store a Map() of these */
@@ -43,8 +39,8 @@ class Edge {
 
 
 // from https://www.redblobgames.com/grids/hexagons/implementation.html#map-shapes
-function createHexagonShapedMap(radius) {
-    let results = new Set();
+function createHexagonShapedMap(radius: number): Set<Hex> {
+    let results: Set<Hex> = new Set();
     for (let q = -radius; q <= radius; q++) {
         let r1 = Math.max(-radius, -q - radius);
         let r2 = Math.min(radius, -q + radius);
@@ -55,7 +51,7 @@ function createHexagonShapedMap(radius) {
     return results;
 }
 
-function fbm(noise2D, x, y, octaves) {
+function fbm(noise2D, x: number, y: number, octaves: number): number {
     let frequency = 1.0;
     let amplitude = 1.0;
     let sumOfAmplitudes = 0.0;
@@ -89,8 +85,9 @@ const BIOMES = {
     FOUNT: "hsl(300 50% 50%)",
     VOLCANO: "hsl(0 50% 25%)",
 };
+type BiomeString = keyof typeof BIOMES;
 
-function biomeFor(elevation, moisture) {
+function biomeFor(elevation: number, moisture: number): BiomeString {
     let ocean = elevation < 0.0;
     let temperature = 1.0 - elevation;
     if (ocean) {
@@ -120,11 +117,11 @@ function biomeFor(elevation, moisture) {
 // Adapted from https://www.redblobgames.com/x/2226-roguelike-dev/
 // JavaScript Map keys are compared by identity, but I want them
 // compared by toString() value, so I have this version of Map.
-class KeyMap extends Map {
-    get(key)        { return super.get(key.toString()); }
-    has(key)        { return super.has(key.toString()); }
-    set(key, value) { return super.set(key.toString(), value); }
-    delete(key)     { return super.delete(key.toString()); }
+class KeyMap<T extends Object, U> extends Map {
+    override get(key: T): U        { return super.get(key.toString()); }
+    override has(key: T): boolean  { return super.has(key.toString()); }
+    override set(key: T, value: U) { return super.set(key.toString(), value); }
+    override delete(key: T)        { return super.delete(key.toString()); }
 }
 
 // Store the set of tiles and edges, and their information.
@@ -146,15 +143,19 @@ class KeyMap extends Map {
 // And here too we have these four types of data. Using duality we can use
 // just two data types (Tile and Edge) to represent the four geometry types.
 class GameMap {
+    hexes: Set<Hex>;
+    edges: Set<Edge>;
+
+    elevation: KeyMap<Hex, number>;
+    moisture: KeyMap<Hex, number>;
+    biome: KeyMap<Hex, BiomeString>;
+    coastline: KeyMap<Edge, boolean>;
+
     /**
      * @param {Set<Hex>} hexes - the set of hexes in this map
      */
-    constructor(radius) {
-        /** @type{number} */
-        this.radius = radius;
-        /** @type{Set<Hex>} */
+    constructor(public radius: number) {
         this.hexes = createHexagonShapedMap(radius);
-        /** @type{Set<Edge>} */
         this.edges = new Set();
         for (let hex of this.hexes) {
             for (let direction = 0; direction < 6; direction++) {
@@ -162,13 +163,9 @@ class GameMap {
             }
         }
 
-        /** @type{KeyMap<Hex, number>} */
         this.elevation = new KeyMap();
-        /** @type{KeyMap<Hex, number>} */
         this.moisture = new KeyMap();
-        /** @type{KeyMap<Hex, string>} */
         this.biome = new KeyMap();
-        /** @type{KeyMap<Edge, boolean>} */
         this.coastline = new KeyMap();
     }
 
@@ -205,7 +202,7 @@ class GameMap {
 
 
 // Drawing code
-function drawHex(ctx, layout, hex, style={}) {
+function drawHex(ctx, layout: Layout, hex: Hex, style: Object={}) {
     let corners = layout.polygonCorners(hex);
     ctx.beginPath();
     ctx.strokeStyle = "black";
@@ -220,19 +217,18 @@ function drawHex(ctx, layout, hex, style={}) {
     ctx.stroke();
 }
 
-function drawEdge(ctx, layout, edge, style) {
+function drawEdge(ctx, layout: Layout, edge: Edge, style: Object) {
     // TODO: for rivers, coastlines, roads
 }
 
 
 // NOTE: could be merged into GameMap; just depends on your coding style
 class Renderer {
-    constructor(id, gameMap) {
-        /** @type{HTMLCanvasElement} */
-        this.canvas = document.getElementById(id);
-        /** @type{GameMap} */
-        this.gameMap = gameMap;
-        /** @type{Layout} */
+    canvas: HTMLCanvasElement;
+    layout: Layout;
+
+    constructor(id, public gameMap) {
+        this.canvas = document.getElementById(id) as HTMLCanvasElement;
         this.layout = new Layout(
             Layout.pointy,
             new Point(this.canvas.width/gameMap.radius/3.6, this.canvas.height/gameMap.radius/3.6),
@@ -264,17 +260,16 @@ class Renderer {
             if (tool === 'OCEAN') radio.setAttribute('checked', "checked");
             label.innerText = tool;
             label.append(radio);
-            toolbar.append(label);
+            toolbar!.append(label);
         }
 
         // adapted from https://www.redblobgames.com/making-of/draggable/examples.html#svg-painting
 
-        /** @type{null | string} */
-        let currentTool = null;
+        let currentTool: null | string = null;
 
         const start = (event) => {
             if (event.button !== 0) return; // left button only
-            currentTool = document.querySelector("#toolbar input:checked").dataset.tool;
+            currentTool = document.querySelector("#toolbar input:checked")!.dataset.tool;
             this.canvas.setPointerCapture(event.pointerId);
             move(event);
         };
@@ -316,6 +311,6 @@ function main() {
     }
     redraw();
 
-    document.getElementById('regenerate').addEventListener('click', redraw);
+    document.getElementById('regenerate')!.addEventListener('click', redraw);
 }
 main();
