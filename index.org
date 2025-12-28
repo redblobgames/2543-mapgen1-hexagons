@@ -29,11 +29,14 @@ Ingredients for later:
 1. mark edges as coastlines, and draw them
 1. generate rivers, and draw them
 1. generate or paint roads, and draw them
-1. have a separate notion of temperature and elevation, so that snow could be at low elevation in arctic regions
+1. draw mountains on edges and corners, like autotiling
+1. have a function from elevation+latitude+season to temperature, and use temperature for the biomes (although it's not really a biome if it varies by season?)
+  - maybe biome is marked by a symbol and color is vegetation
+  - grasslands are dry; plains are green (opposite of Civilization)
 
 #+begin_export html
 <x:footer>
   Created 15 Oct 2025; &#160;
-  <!-- hhmts start -->Last modified: 19 Oct 2025<!-- hhmts end -->
+  <!-- hhmts start -->Last modified: 15 Nov 2025<!-- hhmts end -->
 </x:footer>
 #+end_export

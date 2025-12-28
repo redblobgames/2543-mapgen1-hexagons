@@ -37,7 +37,6 @@ class Edge {
     }
 }
 
-
 // from https://www.redblobgames.com/grids/hexagons/implementation.html#map-shapes
 function createHexagonShapedMap(radius: number): Set<Hex> {
     let results: Set<Hex> = new Set();
@@ -117,6 +116,8 @@ function biomeFor(elevation: number, moisture: number): BiomeString {
 // Adapted from https://www.redblobgames.com/x/2226-roguelike-dev/
 // JavaScript Map keys are compared by identity, but I want them
 // compared by toString() value, so I have this version of Map.
+// Note that keys() will return the toString() versions, not the
+// the original objects (which aren't unique)
 class KeyMap<T extends Object, U> extends Map {
     override get(key: T): U        { return super.get(key.toString()); }
     override has(key: T): boolean  { return super.has(key.toString()); }
@@ -145,6 +146,7 @@ class KeyMap<T extends Object, U> extends Map {
 class GameMap {
     hexes: Set<Hex>;
     edges: Set<Edge>;
+    hexesByID: Map<string, Hex>;
 
     elevation: KeyMap<Hex, number>;
     moisture: KeyMap<Hex, number>;
@@ -156,6 +158,7 @@ class GameMap {
      */
     constructor(public radius: number) {
         this.hexes = createHexagonShapedMap(radius);
+        this.hexesByID = new Map(Array.from(this.hexes, (hex) => [hex.id, hex]));
         this.edges = new Set();
         for (let hex of this.hexes) {
             for (let direction = 0; direction < 6; direction++) {
@@ -197,6 +200,69 @@ class GameMap {
         for (let hex of this.hexes) {
             this.biome.set(hex, biomeFor(this.elevation.get(hex), this.moisture.get(hex)));
         }
+    }
+}
+
+
+// Breadth first search, from one hex to all other hexes. Usage:
+//
+// let bfs = new BreadthFirstSearch((hex) => gameMap.hexesByID.has(hex.id) && gameMap.elevation.get(hex) > 0.0);
+// bfs.searchFrom(start);
+// let reachable = bfs.distanceTo.keys(); // this will be the IDs not the Hex objects themselves
+// let distance = bfs.distanceTo.get(goal);
+// let path = bfs.shortestPathTo(goal);
+//
+// The distances and paths are available for all goal nodes.
+// Calling searchFrom() will reuse the data structures for the
+// next search.
+class BreadthFirstSearch {
+    cameFrom: KeyMap<Hex, Hex | null>;
+    distanceTo: KeyMap<Hex, number>;
+
+    constructor(public isPassable: (hex) => boolean) {
+        this.cameFrom = new KeyMap();
+        this.distanceTo = new KeyMap();
+    }
+
+    // Fills the internal data structures, which can be queried afterwards
+    searchFrom(start: Hex) {
+        const {cameFrom, distanceTo, isPassable} = this;
+        cameFrom.clear();
+        distanceTo.clear();
+
+        let currQueue: Array<Hex> = [];
+        let nextQueue: Array<Hex> = [start];
+        cameFrom.set(start, null);
+        distanceTo.set(start, 0);
+
+        for (let nextDistance = 1; nextQueue.length > 0; nextDistance++) {
+            [currQueue, nextQueue] = [nextQueue, []];
+            for (let curr of currQueue) {
+                for (let dir = 0; dir < 6; dir++) {
+                    let next = curr.neighbor(dir);
+                    if (!isPassable(next)) continue;
+                    if (cameFrom.has(next)) continue;
+                    nextQueue.push(next);
+                    cameFrom.set(next, curr);
+                    distanceTo.set(next, nextDistance);
+                }
+            }
+        }
+    }
+
+    // Ask for the shortest path from any hex to the one passed to searchFrom
+    shortestPathTo(goal: Hex): Array<Hex> | null {
+        const {cameFrom} = this;
+        if (!cameFrom.has(goal)) return null;
+
+        let path: Array<Hex> = [];
+        let current: Hex | null = goal;
+        while (current !== null) {
+            path.push(current);
+            current = cameFrom.get(current);
+        }
+        path.reverse();
+        return path;
     }
 }
 
@@ -244,6 +310,15 @@ class Renderer {
             let color = BIOMES[this.gameMap.biome.get(hex)];
             drawHex(ctx, this.layout, hex, {fillStyle: color});
         }
+
+        /*
+        let bfs = new BreadthFirstSearch((hex) => this.gameMap.hexesByID.has(hex.id) && this.gameMap.elevation.get(hex) > 0.0);
+        bfs.searchFrom(new Hex(0, 0, 0));
+        for (let hex of this.gameMap.hexes) {
+            if (!bfs.distanceTo.has(hex)) continue;
+            drawHex(ctx, this.layout, hex, {fillStyle: `hsl(${bfs.distanceTo.get(hex)*10} 50% 50%)`});
+        }
+         */
     }
 
     setUpPainter() {

@@ -14,8 +14,11 @@ export class Point
 
 export class Hex
 {
+    readonly id: string;
+
     constructor (public q:number, public r:number, public s:number=-q-r) {
         if (Math.round(q + r + s) !== 0) throw "q + r + s must be 0";
+        this.id = this.toString();
     }
 
     public toString() {
