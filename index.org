@@ -1,8 +1,7 @@
 #+title: Mapgen1 with hexagons
 #+date: <2025-10-15 Wed>
-#+draft: t
 
-I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before.
+I wanted to procedurally generate a wilderness map on a hexagonal grid. I already have the ingredients for this: [[https://www.redblobgames.com/maps/terrain-from-noise/][mapgen1]], [[https://www.redblobgames.com/grids/hexagons/][hexagonal grids]], [[https://www.redblobgames.com/grids/parts/#hexagon-coordinates][edge coordinates]], but I haven't put these ingredients together in this way before. I've implemented /elevation painting/ in mapgen4 but this project has /biome painting/.
 
 #+include: "embed.html" export html
 
